@@ -40,7 +40,7 @@ App.tsx (Main Container)
 │   └── TreeList (Generic tree component)
 ├── Geography Component (Step 2)  
 │   ├── SearchBar (Generic)
-│   └── Integrated Tree Rendering (Geography-specific)
+│   └── TreeList (Generic tree component)
 └── SelectionWizard (Always Visible)
     ├── Collapsible Sections
     ├── Selection Management
@@ -55,10 +55,11 @@ App.tsx (Main Container)
 
 #### 3. **Generic Component Design**
 - **SearchBar**: Reusable across different data types
-- **TreeList**: Generic tree component supporting both CategoryNode and GeographyNode
+- **TreeList**: Unified generic tree component supporting both CategoryNode and GeographyNode
 - **TypeScript Generics**: Type-safe for any data structure with union types
 - **Interface-Based**: Flexible configuration through props
 - **Type Guards**: Runtime type checking for different node types
+- **Consistent Implementation**: Both Category and Geography components use the same TreeList architecture
 
 ### **Key Design Concepts**
 
@@ -900,12 +901,21 @@ const handleRemoveGeography = (geographyToRemove: string) => {
   setSelectedCategories={setSelectedCategories}
   isSearching={isSearching}
   searchQuery={searchQuery}
+  nodeType="category"
+  initiallyExpanded={true}
 />
 
-// Geography Component (integrated approach)
-<Geography
+// Geography Component (using generic TreeList)
+<TreeList
+  data={filteredData}
+  heading="Select Geographies"
+  showSelectAllButton={true}
   selectedGeographies={selectedGeographies}
   setSelectedGeographies={setSelectedGeographies}
+  isSearching={isSearching}
+  searchQuery={searchQuery}
+  nodeType="geography"
+  initiallyExpanded={false}
 />
 ```
 
@@ -922,6 +932,7 @@ const [currentStep, setCurrentStep] = useState<'category' | 'geography'>('catego
 
 **2. Conditional Step Rendering**:
 ```typescript
+// Both Category and Geography components use the same generic TreeList internally
 {currentStep === 'category' && <Category {...categoryProps} />}
 {currentStep === 'geography' && <Geography {...geographyProps} />}
 ```
@@ -940,6 +951,7 @@ const [currentStep, setCurrentStep] = useState<'category' | 'geography'>('catego
 **Key Setup Concepts**:
 - **State Centralization**: All wizard state managed in App component
 - **Step-Based Rendering**: Show only current step's component
+- **Unified Architecture**: Both Category and Geography use the same generic TreeList
 - **Prop Passing**: Pass state and handlers to child components
 - **Navigation Control**: Wizard handles step transitions
 
@@ -1146,12 +1158,12 @@ test('filters data based on search input', () => {
 
 ### **Architecture Benefits**
 - **Component Isolation**: Each component has a single responsibility
-- **Consolidated Geography**: Geography component integrates search and tree logic for better cohesion
+- **Unified Tree Architecture**: Both Category and Geography components use the same generic TreeList
 - **Testable Code**: Components are easy to unit test
-- **Reusable Logic**: Generic TreeList for categories, integrated solution for geography
+- **Reusable Logic**: Generic TreeList handles all hierarchical data visualization
 - **Type Safety**: Prevents common JavaScript errors
 - **Performance**: Optimized for large datasets and frequent interactions
-- **Consistent Patterns**: Both Category and Geography follow similar architectural approaches
+- **Consistent Patterns**: Both Category and Geography follow identical architectural approaches
 
 ---
 
