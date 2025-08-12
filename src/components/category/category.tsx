@@ -52,6 +52,7 @@ const Category= (props: CategoryProps) => {
         setSelectedCategories={setSelectedCategories}
         isSearching={isSearching}
         searchQuery={searchQuery}
+        nodeType="category"
       />
     </div>
   );

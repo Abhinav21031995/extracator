@@ -26,6 +26,8 @@ The React Extractor UI is a sophisticated multi-step wizard that allows users to
 5. **Navigate** between steps with context-aware controls
 
 
+
+
 ## 🏗 Architecture & Concepts
 
 ### **Core Architectural Patterns**
@@ -35,10 +37,10 @@ The React Extractor UI is a sophisticated multi-step wizard that allows users to
 App.tsx (Main Container)
 ├── Category Component (Step 1)
 │   ├── SearchBar (Generic)
-│   └── TreeList (Category-specific)
+│   └── TreeList (Generic tree component)
 ├── Geography Component (Step 2)  
 │   ├── SearchBar (Generic)
-│   └── GeographyTreeList (Geography-specific)
+│   └── Integrated Tree Rendering (Geography-specific)
 └── SelectionWizard (Always Visible)
     ├── Collapsible Sections
     ├── Selection Management
@@ -53,8 +55,10 @@ App.tsx (Main Container)
 
 #### 3. **Generic Component Design**
 - **SearchBar**: Reusable across different data types
-- **TypeScript Generics**: Type-safe for any data structure
+- **TreeList**: Generic tree component supporting both CategoryNode and GeographyNode
+- **TypeScript Generics**: Type-safe for any data structure with union types
 - **Interface-Based**: Flexible configuration through props
+- **Type Guards**: Runtime type checking for different node types
 
 ### **Key Design Concepts**
 
@@ -68,14 +72,36 @@ SearchBar<T extends SearchableItem>
 └── State Management: Communicates search state to parent components
 ```
 
-#### 🌳 **Tree Component Pattern**
+#### 🌳 **Enhanced Generic TreeList Architecture**
 ```typescript
-TreeList/GeographyTreeList
-├── Recursive Rendering: Handles nested hierarchical data
+TreeList<TreeNodeType = CategoryNode | GeographyNode>
+├── Union Type Support: Single component handles multiple data types
+├── Type Guards: Runtime type detection (isCategoryNode, isGeographyNode)
+├── Generic Helpers: getNodeKey(), getNodeName(), getNodeChildren(), getCanSelectSubItems()
+├── Enhanced Props Interface: New generic props + backward compatibility
+├── Smart Prop Selection: Dynamic prop selection based on nodeType
+├── Function Aliases: Support for both "Category" and "Item" naming conventions
+├── Recursive Rendering: Handles nested hierarchical data for both types
 ├── Selection Management: Multi-select with parent-child relationships
-├── Expansion Control: Collapsible nodes with visual indicators
+├── Expansion Control: Configurable initial expansion per type
 ├── Search Integration: Auto-expansion of matching nodes
-└── Event Broadcasting: Select All, Clear All functionality
+├── Event Broadcasting: Unified event handling for both data types
+└── Merged Architecture: Consolidated tree-list-generic.tsx functionality
+```
+
+#### 🔧 **Component Wrapper Pattern**
+```typescript
+Category Component (Wrapper)
+├── TreeList Integration: Uses generic TreeList with nodeType="category"
+├── SearchBar Integration: Category-specific search configuration
+├── Default Behavior: Initially expanded (initiallyExpanded={true})
+└── Data Source: MockCategoryHierarchyData
+
+Geography Component (Wrapper)  
+├── TreeList Integration: Uses generic TreeList with nodeType="geography"
+├── SearchBar Integration: Geography-specific search configuration
+├── Default Behavior: Initially collapsed (initiallyExpanded={false})
+└── Data Source: MockGeographyHierarchyData
 ```
 
 #### 🧙‍♂️ **Wizard Pattern**
@@ -99,11 +125,13 @@ App.tsx
 └── Renders: Category + SelectionWizard
 ```
 
-### **2. Category Selection Flow**
+### **2. Category Selection Flow (via Generic TreeList)**
 ```
-User Interaction
+User Interaction in Category Component
     ↓
-TreeList Component
+TreeList Component (nodeType="category")
+    ↓
+Generic helper functions (getNodeName, getNodeKey)
     ↓
 onSelectionChange(newSelections)
     ↓
@@ -116,9 +144,28 @@ SelectionWizard Re-renders
 Visual Feedback Updated
 ```
 
-### **3. Search Flow**
+### **2.1. Geography Selection Flow (via Generic TreeList)**
 ```
-User Types in SearchBar
+User Interaction in Geography Component
+    ↓
+TreeList Component (nodeType="geography")
+    ↓
+Generic helper functions (getNodeName, getNodeKey)
+    ↓
+onSelectionChange(newSelections)
+    ↓
+setSelectedGeographies(newSelections)
+    ↓
+App State Updated
+    ↓
+SelectionWizard Re-renders
+    ↓
+Visual Feedback Updated
+```
+
+### **3. Search Flow (Generic for Both Types)**
+```
+User Types in SearchBar (Category or Geography)
     ↓
 Debounced Input
     ↓
@@ -126,11 +173,13 @@ filterNodes(searchQuery)
     ↓
 onFilteredDataChange(filteredData)
     ↓
-TreeList Receives Filtered Data
+TreeList Receives Filtered Data (TreeNodeType[])
+    ↓
+Type Guards Determine Node Type
     ↓
 Auto-expand Matching Nodes
     ↓
-Highlight Search Terms
+Highlight Search Terms (Generic)
 ```
 
 ### **4. Navigation Flow**
@@ -143,16 +192,18 @@ If Valid: onNextStep()
     ↓
 setCurrentStep('geography')
     ↓
-App Renders Geography Component
+App Renders Geography Component (with TreeList)
     ↓
 SelectionWizard Updates Context
 ```
 
-### **5. Selection Synchronization Flow**
+### **5. Selection Synchronization Flow (Generic)**
 ```
 Component Mounts/Props Change
     ↓
-useEffect([selectedCategories])
+useEffect([actualSelectedItems]) // Generic selected items
+    ↓
+Type Guards Determine Node Type
     ↓
 Sync Internal Selection State
     ↓
@@ -169,17 +220,14 @@ Maintain UI Consistency
 src/
 ├── components/
 │   ├── category/
-│   │   ├── category.tsx              # Category selection page
+│   │   ├── category.tsx              # Category wrapper using generic TreeList
 │   │   └── category.css              # Category-specific styles
 │   ├── geography/
-│   │   ├── geography.tsx             # Geography selection page
+│   │   ├── geography.tsx             # Geography wrapper using generic TreeList
 │   │   └── geography.css             # Geography-specific styles
 │   ├── tree-list/
-│   │   ├── tree-list.tsx             # Category tree component
+│   │   ├── tree-list.tsx             # Unified generic tree component (CategoryNode | GeographyNode)
 │   │   └── tree-list.css             # Tree styling
-│   ├── geography-tree-list/
-│   │   ├── geography-tree-list.tsx   # Geography tree component
-│   │   └── geography-tree-list.css   # Geography tree styling
 │   ├── selectionwizard/
 │   │   ├── selectionwizard.tsx       # Selection management panel
 │   │   └── selection-wizard.css      # Wizard styling
@@ -267,34 +315,168 @@ interface SearchBarProps<T> {
 />
 ```
 
-### **3. TreeList Components**
-**Purpose**: Hierarchical data visualization with selection capabilities
+### **3. Generic TreeList Architecture**
+**Purpose**: Unified hierarchical data visualization supporting multiple node types
 
-**Features**:
-- **Recursive Rendering**: Handles unlimited nesting levels
+**Core Architecture**: 
+The TreeList component now uses a generic approach to handle both CategoryNode and GeographyNode data types through:
+
+```typescript
+// Union type supporting multiple node types
+type TreeNodeType = CategoryNode | GeographyNode;
+
+// Type guards for runtime type detection
+const isCategoryNode = (node: TreeNodeType): node is CategoryNode => {
+  return 'productName' in node && 'categories' in node;
+};
+
+const isGeographyNode = (node: TreeNodeType): node is GeographyNode => {
+  return 'geographyName' in node && 'geographies' in node;
+};
+
+// Complete set of generic helper functions for node operations
+const getNodeKey = (node: TreeNodeType): string => {
+  if (isCategoryNode(node)) {
+    return String(node.productID ?? node.categoryID ?? node.productName);
+  } else {
+    return String(node.geographyID ?? node.geographyName);
+  }
+};
+
+const getNodeName = (node: TreeNodeType): string => {
+  if (isCategoryNode(node)) {
+    return node.productName;
+  } else {
+    return node.geographyName;
+  }
+};
+
+const getNodeChildren = (node: TreeNodeType): TreeNodeType[] => {
+  if (isCategoryNode(node)) {
+    return node.categories as TreeNodeType[];
+  } else {
+    return node.geographies as TreeNodeType[];
+  }
+};
+
+const getCanSelectSubItems = (node: TreeNodeType): boolean => {
+  if (isCategoryNode(node)) {
+    return node.canSelectsubcategories;
+  } else {
+    return node.canSelectSubGeographies;
+  }
+};
+```
+
+**TreeList Component Props Interface**:
+```typescript
+export interface TreeListProps {
+  data?: TreeNodeType[];
+  heading?: string;
+  showSelectAllButton?: boolean;
+  
+  // Generic props for unified selection handling
+  selectedItems?: string[];
+  setSelectedItems?: React.Dispatch<React.SetStateAction<string[]>>;
+  
+  // Specific props for backward compatibility
+  selectedCategories?: string[];
+  setSelectedCategories?: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedGeographies?: string[];
+  setSelectedGeographies?: React.Dispatch<React.SetStateAction<string[]>>;
+  
+  isSearching?: boolean;
+  searchQuery?: string;
+  initiallyExpanded?: boolean;
+  nodeType?: 'category' | 'geography';
+}
+```
+
+**Flexible Prop Selection**:
+```typescript
+// TreeList automatically selects the appropriate props based on context
+const actualSelectedItems = selectedItems && selectedItems.length > 0 
+  ? selectedItems 
+  : (nodeType === 'category' ? selectedCategories : selectedGeographies);
+  
+const actualSetSelectedItems = setSelectedItems 
+  || (nodeType === 'category' ? setSelectedCategories : setSelectedGeographies);
+```
+```
+
+**Generic Component Features**:
+- **Unified Logic**: Single component handles both data types
+- **Type-Safe Operations**: TypeScript type guards ensure safe property access
+- **Configurable Behavior**: Different initial expansion per node type
+- **Event Handling**: Supports both category and geography events
+- **Recursive Rendering**: Handles unlimited nesting levels for any node type
 - **Multi-Selection**: Checkbox-based selection with visual feedback
 - **Expansion Control**: Collapsible nodes with smooth animations
-- **Search Integration**: Auto-expansion and highlighting
+- **Search Integration**: Auto-expansion and highlighting for both types
 - **Bulk Operations**: Select All / Clear All functionality
 
-**Selection State Synchronization**:
+**Component Wrapper Pattern**:
+
+**Category Component (Wrapper)**:
 ```typescript
-// Synchronize internal selection state with external props
+<TreeList
+  data={filteredData}
+  heading="Select Categories"
+  selectedCategories={selectedCategories}
+  setSelectedCategories={setSelectedCategories}
+  isSearching={isSearching}
+  searchQuery={searchQuery}
+  initiallyExpanded={true}  // Categories start expanded
+  nodeType="category"
+/>
+```
+
+**Geography Component (Wrapper)**:
+```typescript
+<TreeList
+  data={filteredData}
+  heading="Select Geographies"
+  selectedGeographies={selectedGeographies}
+  setSelectedGeographies={setSelectedGeographies}
+  isSearching={isSearching}
+  searchQuery={searchQuery}
+  initiallyExpanded={false}  // Geographies start collapsed
+  nodeType="geography"
+/>
+```
+
+**Key Benefits of Generic Architecture**:
+- **Code Reusability**: Single component handles both category and geography trees
+- **Maintainability**: Changes to tree logic only need to be made in one place
+- **Type Safety**: TypeScript ensures correct property access for each node type
+- **Consistency**: Uniform behavior across different data types
+- **Backward Compatibility**: Existing implementations continue to work
+- **Flexible Props**: Support for both generic and specific prop patterns
+- **Smart Selection**: Automatic prop selection based on context
+- **Extensibility**: Easy to add new node types by extending the union type
+
+**Selection State Synchronization (Generic)**:
+```typescript
+// Generic synchronization logic that works for both CategoryNode and GeographyNode
 useEffect(() => {
   if (data) {
     const newSelection: SelectionMap = {};
     
-    const markSelectedNodes = (nodes: CategoryNode[]) => {
+    // Generic helper function to mark selected nodes
+    const markSelectedNodes = (nodes: TreeNodeType[]) => {
       nodes.forEach((node) => {
         const nodeKey = getNodeKey(node);
-        const isSelected = selectedCategories.includes(node.productName);
+        const nodeName = getNodeName(node);
+        const isSelected = actualSelectedItems.includes(nodeName);
         
         if (isSelected) {
           newSelection[nodeKey] = true;
         }
         
-        if (Array.isArray(node.categories) && node.categories.length > 0) {
-          markSelectedNodes(node.categories);
+        // Recursively check children using generic helper
+        const children = getNodeChildren(node);
+        if (Array.isArray(children) && children.length > 0) {
+          markSelectedNodes(children);
         }
       });
     };
@@ -302,7 +484,9 @@ useEffect(() => {
     markSelectedNodes(data);
     setSelection(newSelection);
   }
-}, [selectedCategories, data]);
+}, [actualSelectedItems, data]);
+
+// actualSelectedItems automatically selected based on props and nodeType
 ```
 
 ### **4. SelectionWizard - Selection Management Panel**
@@ -348,7 +532,75 @@ The SelectionWizard uses conditional rendering to create collapsible sections th
 - **Context Awareness**: Expand relevant section automatically
 - **Visual Feedback**: Different views for expanded vs collapsed states
 
-## ✨ Key Features
+## 💡 Current Usage Patterns
+
+### **Category Component Implementation**
+```typescript
+// Category component using TreeList with category-specific configuration
+<TreeList
+  data={filteredData}
+  heading="Select Categories"
+  selectedCategories={selectedCategories}
+  setSelectedCategories={setSelectedCategories}
+  isSearching={isSearching}
+  searchQuery={searchQuery}
+  initiallyExpanded={true}  // Categories start expanded
+  nodeType="category"
+/>
+```
+
+### **Geography Component Implementation**
+```typescript
+// Geography component using TreeList with geography-specific configuration
+<TreeList
+  data={filteredData}
+  heading="Select Geographies"
+  selectedGeographies={selectedGeographies}
+  setSelectedGeographies={setSelectedGeographies}
+  isSearching={isSearching}
+  searchQuery={searchQuery}
+  initiallyExpanded={false}  // Geographies start collapsed
+  nodeType="geography"
+/>
+```
+
+### **Generic Usage Pattern**
+```typescript
+// Generic approach for new implementations
+<TreeList
+  data={currentData}
+  heading={`Select ${nodeType === 'category' ? 'Categories' : 'Geographies'}`}
+  selectedItems={selectedItems}
+  setSelectedItems={setSelectedItems}
+  nodeType={nodeType}
+  initiallyExpanded={nodeType === 'category'}
+/>
+```
+
+### **SearchBar Integration**
+```typescript
+// Category SearchBar
+<SearchBar<CategoryNode>
+  data={MockCategoryHierarchyData}
+  onFilteredDataChange={handleFilteredDataChange}
+  onSearchStateChange={handleSearchStateChange}
+  placeholder="Search categories..."
+  searchField="productName"
+  childrenField="categories"
+/>
+
+// Geography SearchBar
+<SearchBar<GeographyNode>
+  data={MockGeographyHierarchyData}
+  onFilteredDataChange={handleFilteredDataChange}
+  onSearchStateChange={handleSearchStateChange}
+  placeholder="Search geographies..."
+  searchField="geographyName"
+  childrenField="geographies"
+/>
+```
+
+## 🎯 Key Features
 
 ### **🔍 Advanced Search Capabilities**
 
@@ -371,14 +623,15 @@ searchField={(product) => `${product.title} ${product.description} ${product.cat
 
 ### **🌳 Intelligent Tree Management**
 
-#### **Expansion Strategies**
-- **Category Tree**: Auto-expand root nodes for immediate visibility
-- **Geography Tree**: Start collapsed to reduce information overload
-- **Search Mode**: Auto-expand matching branches
+#### **Expansion Strategies (Generic TreeList)**
+- **Category Tree**: Auto-expand root nodes for immediate visibility (`initiallyExpanded={true}`)
+- **Geography Tree**: Start collapsed to reduce information overload (`initiallyExpanded={false}`)
+- **Search Mode**: Auto-expand matching branches in both components
+- **Configurable**: Expansion behavior controlled via props
 
 **Implementation**:
 ```typescript
-// Category Tree: Auto-expand
+// Generic TreeList: Configurable expansion
 useEffect(() => {
   if (data) {
     setExpanded((prevExpanded) => {
@@ -386,29 +639,29 @@ useEffect(() => {
       data.forEach((node) => {
         const nodeKey = getNodeKey(node);
         if (!(nodeKey in newExpanded)) {
-          newExpanded[nodeKey] = true; // Auto-expand for categories
+          newExpanded[nodeKey] = initiallyExpanded; // Configurable per wrapper
         }
       });
       return newExpanded;
     });
   }
-}, [data]);
+}, [data, initiallyExpanded]);
 
-// Geography Tree: Start collapsed
-useEffect(() => {
-  if (data) {
-    setExpanded((prevExpanded) => {
-      const newExpanded: SelectionMap = { ...prevExpanded };
-      data.forEach((node) => {
-        const nodeKey = getNodeKey(node);
-        if (!(nodeKey in newExpanded)) {
-          newExpanded[nodeKey] = false; // Keep collapsed for geography
-        }
-      });
-      return newExpanded;
-    });
-  }
-}, [data]);
+// Category Component: Uses TreeList with initiallyExpanded={true}
+<TreeList
+  data={filteredData}
+  nodeType="category"
+  initiallyExpanded={true}  // Categories auto-expand
+  // ... other props
+/>
+
+// Geography Component: Uses TreeList with initiallyExpanded={false}
+<TreeList
+  data={filteredData}
+  nodeType="geography"
+  initiallyExpanded={false}  // Geographies start collapsed
+  // ... other props
+/>
 ```
 
 #### **Selection Persistence**
@@ -489,6 +742,38 @@ export interface GeographyNode {
 }
 ```
 
+### **Generic TreeList Architecture Benefits**
+
+#### **🔄 Code Reusability & Maintainability**
+- **Single Source of Truth**: One TreeList component handles all hierarchical data
+- **DRY Principle**: Eliminates duplication between category and geography trees
+- **Centralized Logic**: Tree operations, selection, and expansion logic in one place
+- **Easy Updates**: Changes to tree behavior automatically apply to both data types
+
+#### **🛡️ Type Safety & Reliability**
+- **TypeScript Generics**: Compile-time type checking for all operations
+- **Type Guards**: Runtime type detection prevents property access errors
+- **Union Types**: Safe handling of multiple data structures
+- **Interface Contracts**: Clear contracts between components
+
+#### **⚡ Performance Benefits**
+- **Unified Rendering**: Single optimized rendering pipeline for both types
+- **Consistent State Management**: Shared state logic reduces complexity
+- **Memory Efficiency**: No duplicate component instances or logic
+- **Optimized Re-renders**: Generic useEffect dependencies work for both types
+
+#### **🔧 Development Experience**
+- **Consistent APIs**: Same props interface for both category and geography
+- **Predictable Behavior**: Uniform interaction patterns across data types
+- **Easy Debugging**: Single component to debug for tree-related issues
+- **Clear Separation**: Wrapper components provide clear boundaries
+
+#### **📈 Extensibility & Future-Proofing**
+- **Easy New Types**: Add new node types by extending TreeNodeType union
+- **Scalable Architecture**: Generic helpers can be extended for new properties
+- **Flexible Configuration**: Props-based customization for different behaviors
+- **Component Composition**: Wrapper pattern allows specific customizations
+
 ### **State Management Patterns**
 
 #### **Centralized State**
@@ -537,13 +822,28 @@ useEffect(() => {
 
 #### **Event-Based Communication**
 ```typescript
-// SelectionWizard communicates with TreeList via events
+// Category component communicates with SelectionWizard via events
 const handleRemoveCategory = (categoryToRemove: string) => {
   setSelectedCategories(prev => prev.filter(cat => cat !== categoryToRemove));
   
   const event = new CustomEvent('categorySelectionChanged', {
     detail: {
       categoryName: categoryToRemove,
+      selected: false,
+      updateNode: true
+    }
+  });
+  
+  window.dispatchEvent(event);
+};
+
+// Geography component communicates with SelectionWizard via events
+const handleRemoveGeography = (geographyToRemove: string) => {
+  setSelectedGeographies(prev => prev.filter(geo => geo !== geographyToRemove));
+  
+  const event = new CustomEvent('geographySelectionChanged', {
+    detail: {
+      geographyName: geographyToRemove,
       selected: false,
       updateNode: true
     }
@@ -591,6 +891,7 @@ const handleRemoveCategory = (categoryToRemove: string) => {
 
 ### **Tree Component with Selection**
 ```typescript
+// Category Component (using generic TreeList)
 <TreeList
   data={filteredData}
   heading="Select Categories"
@@ -599,6 +900,12 @@ const handleRemoveCategory = (categoryToRemove: string) => {
   setSelectedCategories={setSelectedCategories}
   isSearching={isSearching}
   searchQuery={searchQuery}
+/>
+
+// Geography Component (integrated approach)
+<Geography
+  selectedGeographies={selectedGeographies}
+  setSelectedGeographies={setSelectedGeographies}
 />
 ```
 
@@ -839,10 +1146,12 @@ test('filters data based on search input', () => {
 
 ### **Architecture Benefits**
 - **Component Isolation**: Each component has a single responsibility
+- **Consolidated Geography**: Geography component integrates search and tree logic for better cohesion
 - **Testable Code**: Components are easy to unit test
-- **Reusable Logic**: Search and tree logic can be reused
+- **Reusable Logic**: Generic TreeList for categories, integrated solution for geography
 - **Type Safety**: Prevents common JavaScript errors
 - **Performance**: Optimized for large datasets and frequent interactions
+- **Consistent Patterns**: Both Category and Geography follow similar architectural approaches
 
 ---
 

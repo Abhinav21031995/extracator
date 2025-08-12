@@ -140,7 +140,7 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
         return newGeographies;
       });
       
-      // Step 2: Notify GeographyTreeList to update visual state and node property
+      // Step 2: Notify Geography component to update visual state and node property
       console.log('[SelectionWizard] Preparing geography tree update event:', {
         geography: geographyToRemove,
         newState: false

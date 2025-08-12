@@ -1,34 +1,101 @@
 import React, { useState, useEffect } from 'react';
 import { CategoryNode } from '../../models/category-tree';
+import { GeographyNode } from '../../models/geography-tree';
 import { MockCategoryHierarchyData } from '../../core/mock/data/mock-category-data';
 import './tree-list.css';
 
+// Type to support both CategoryNode and GeographyNode
+type TreeNodeType = CategoryNode | GeographyNode;
+
 export interface TreeListProps {
-  data?: CategoryNode[];
+  data?: TreeNodeType[];
   heading?: string;
   showSelectAllButton?: boolean;
+  
+  // New generic props (preferred)
+  selectedItems?: string[];
+  setSelectedItems?: React.Dispatch<React.SetStateAction<string[]>>;
+  
+  // Legacy specific props (backward compatibility)
   selectedCategories?: string[];
   setSelectedCategories?: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedGeographies?: string[];
+  setSelectedGeographies?: React.Dispatch<React.SetStateAction<string[]>>;
+  
   isSearching?: boolean;
   searchQuery?: string;
+  initiallyExpanded?: boolean;
+  nodeType?: 'category' | 'geography';
 }
 
 interface SelectionMap {
   [key: string]: boolean;
 }
 
-const getNodeKey = (node: CategoryNode) =>
-  String(node.productID ?? node.categoryID ?? node.productName);
+// Type guards
+const isCategoryNode = (node: TreeNodeType): node is CategoryNode => {
+  return 'productName' in node && 'categories' in node;
+};
+
+const isGeographyNode = (node: TreeNodeType): node is GeographyNode => {
+  return 'geographyName' in node && 'geographies' in node;
+};
+
+// Generic helper functions
+const getNodeKey = (node: TreeNodeType): string => {
+  if (isCategoryNode(node)) {
+    return String(node.productID ?? node.categoryID ?? node.productName);
+  } else {
+    return String(node.geographyID ?? node.geographyName);
+  }
+};
+
+const getNodeName = (node: TreeNodeType): string => {
+  if (isCategoryNode(node)) {
+    return node.productName;
+  } else {
+    return node.geographyName;
+  }
+};
+
+const getNodeChildren = (node: TreeNodeType): TreeNodeType[] => {
+  if (isCategoryNode(node)) {
+    return node.categories as TreeNodeType[];
+  } else {
+    return node.geographies as TreeNodeType[];
+  }
+};
+
+const getCanSelectSubItems = (node: TreeNodeType): boolean => {
+  if (isCategoryNode(node)) {
+    return node.canSelectsubcategories;
+  } else {
+    return node.canSelectSubGeographies;
+  }
+};
 
 const TreeList = ({
-  data = MockCategoryHierarchyData,
-  heading = 'Select Categories',
+  data = MockCategoryHierarchyData as TreeNodeType[],
+  heading = 'Select Items',
   showSelectAllButton = true,
+  selectedItems = [],
+  setSelectedItems,
   selectedCategories = [],
   setSelectedCategories,
+  selectedGeographies = [],
+  setSelectedGeographies,
   isSearching = false,
-  searchQuery = ''
+  searchQuery = '',
+  initiallyExpanded = true, // Default to true for backward compatibility
+  nodeType = 'category'
 }: TreeListProps) => {
+  // Smart prop selection: prefer generic props, fallback to specific props
+  const actualSelectedItems = selectedItems && selectedItems.length > 0 
+    ? selectedItems 
+    : (nodeType === 'category' ? selectedCategories : selectedGeographies);
+    
+  const actualSetSelectedItems = setSelectedItems 
+    || (nodeType === 'category' ? setSelectedCategories : setSelectedGeographies);
   // Selection and expansion state
   const [selection, setSelection] = useState<SelectionMap>({});
   const [expanded, setExpanded] = useState<SelectionMap>({});
@@ -44,14 +111,14 @@ const TreeList = ({
         data.forEach((node) => {
           const nodeKey = getNodeKey(node);
           if (!(nodeKey in newExpanded)) {
-            newExpanded[nodeKey] = true; // Back to auto-expand for categories
+            newExpanded[nodeKey] = initiallyExpanded; // Use the prop to control initial expansion
           }
         });
         
         return newExpanded;
       });
     }
-  }, [data]);
+  }, [data, initiallyExpanded]);
 
   // Handle search mode expansion - expand nodes that have matching children
   useEffect(() => {
@@ -60,12 +127,13 @@ const TreeList = ({
         const newExpanded: SelectionMap = { ...prevExpanded };
         
         // Expand all nodes that have children in search results
-        const expandNodesWithMatches = (nodes: CategoryNode[]) => {
+        const expandNodesWithMatches = (nodes: TreeNodeType[]) => {
           nodes.forEach((node) => {
             const nodeKey = getNodeKey(node);
-            if (Array.isArray(node.categories) && node.categories.length > 0) {
+            const children = getNodeChildren(node);
+            if (Array.isArray(children) && children.length > 0) {
               newExpanded[nodeKey] = true;
-              expandNodesWithMatches(node.categories);
+              expandNodesWithMatches(children);
             }
           });
         };
@@ -78,26 +146,35 @@ const TreeList = ({
 
   // Listen for external events from SelectionWizard
   useEffect(() => {
-    const handleSelectionChange = (event: CustomEvent<{ categoryName: string; selected: boolean; updateNode?: boolean }>) => {
-      console.log('[TreeList] Received categorySelectionChanged event:', event.detail);
+    // Support both legacy and new event handling approaches
+    const eventName = nodeType === 'category' ? 'categorySelectionChanged' : 'geographySelectionChanged';
+    const clearAllEventName = nodeType === 'category' ? 'categoryClearAll' : 'geographyClearAll';
+    const itemNameKey = nodeType === 'category' ? 'categoryName' : 'geographyName';
+    
+    const handleSelectionChange = (event: CustomEvent<any>) => {
+      console.log('[TreeList] Received itemSelectionChanged event:', event.detail);
       
-      const { categoryName, selected } = event.detail;
+      // Support both old and new event detail formats
+      const itemName = event.detail.itemName || event.detail[itemNameKey];
+      const { selected } = event.detail;
       
       // Find the node in the data
-      const findNodeByName = (nodes: CategoryNode[], name: string): CategoryNode | null => {
+      const findNodeByName = (nodes: TreeNodeType[], name: string): TreeNodeType | null => {
         for (const node of nodes) {
-          if (node.productName === name) {
+          const nodeName = getNodeName(node);
+          if (nodeName === name) {
             return node;
           }
-          if (Array.isArray(node.categories)) {
-            const found = findNodeByName(node.categories, name);
+          const children = getNodeChildren(node);
+          if (Array.isArray(children)) {
+            const found = findNodeByName(children, name);
             if (found) return found;
           }
         }
         return null;
       };
 
-      const targetNode = findNodeByName(data, categoryName);
+      const targetNode = findNodeByName(data, itemName);
       if (targetNode) {
         const nodeKey = getNodeKey(targetNode);
         console.log('[TreeList] Updating node selection:', { nodeKey, selected });
@@ -112,41 +189,53 @@ const TreeList = ({
     };
 
     const handleClearAll = () => {
-      console.log('[TreeList] Received categoryClearAll event');
+      console.log('[TreeList] Received itemClearAll event');
       // Clear all node selections and update state
       setSelection({});
       setIsAllSelected(false);
     };
 
-    window.addEventListener('categorySelectionChanged', handleSelectionChange as EventListener);
-    window.addEventListener('categoryClearAll', handleClearAll as EventListener);
+    // Listen for both category and geography events
+    const categoryEventName = 'categorySelectionChanged';
+    const geographyEventName = 'geographySelectionChanged';
+    const categoryClearEventName = 'categoryClearAll';
+    const geographyClearEventName = 'geographyClearAll';
+
+    window.addEventListener(categoryEventName, handleSelectionChange as EventListener);
+    window.addEventListener(geographyEventName, handleSelectionChange as EventListener);
+    window.addEventListener(categoryClearEventName, handleClearAll as EventListener);
+    window.addEventListener(geographyClearEventName, handleClearAll as EventListener);
 
     return () => {
-      window.removeEventListener('categorySelectionChanged', handleSelectionChange as EventListener);
-      window.removeEventListener('categoryClearAll', handleClearAll as EventListener);
+      window.removeEventListener(categoryEventName, handleSelectionChange as EventListener);
+      window.removeEventListener(geographyEventName, handleSelectionChange as EventListener);
+      window.removeEventListener(categoryClearEventName, handleClearAll as EventListener);
+      window.removeEventListener(geographyClearEventName, handleClearAll as EventListener);
     };
   }, [data]);
 
-  // Synchronize internal selection state with external selectedCategories prop
+  // Synchronize internal selection state with external selected items prop
   useEffect(() => {
-    console.log('[TreeList] Synchronizing with selectedCategories:', selectedCategories);
+    console.log('[TreeList] Synchronizing with selected items:', actualSelectedItems);
     
     if (data) {
       const newSelection: SelectionMap = {};
       
       // Helper function to find and mark selected nodes
-      const markSelectedNodes = (nodes: CategoryNode[]) => {
+      const markSelectedNodes = (nodes: TreeNodeType[]) => {
         nodes.forEach((node) => {
           const nodeKey = getNodeKey(node);
-          const isSelected = selectedCategories.includes(node.productName);
+          const nodeName = getNodeName(node);
+          const isSelected = actualSelectedItems.includes(nodeName);
           
           if (isSelected) {
             newSelection[nodeKey] = true;
           }
           
           // Recursively check children
-          if (Array.isArray(node.categories) && node.categories.length > 0) {
-            markSelectedNodes(node.categories);
+          const children = getNodeChildren(node);
+          if (Array.isArray(children) && children.length > 0) {
+            markSelectedNodes(children);
           }
         });
       };
@@ -156,94 +245,106 @@ const TreeList = ({
       console.log('[TreeList] New selection state:', newSelection);
       setSelection(newSelection);
       
-      // Update "Select All" state - collect all category names and check if all are selected
-      const allCategoryNames: string[] = [];
-      const collectNames = (nodes: CategoryNode[]) => {
+      // Update "Select All" state - collect all item names and check if all are selected
+      const allItemNames: string[] = [];
+      const collectNames = (nodes: TreeNodeType[]) => {
         nodes.forEach((node) => {
-          allCategoryNames.push(node.productName);
-          if (Array.isArray(node.categories)) {
-            collectNames(node.categories);
+          const nodeName = getNodeName(node);
+          allItemNames.push(nodeName);
+          const children = getNodeChildren(node);
+          if (Array.isArray(children)) {
+            collectNames(children);
           }
         });
       };
       collectNames(data);
       
-      const isAllCurrentlySelected = allCategoryNames.length > 0 && 
-        allCategoryNames.every((name: string) => selectedCategories.includes(name));
+      const isAllCurrentlySelected = allItemNames.length > 0 && 
+        allItemNames.every((name: string) => actualSelectedItems.includes(name));
       setIsAllSelected(isAllCurrentlySelected);
     }
-  }, [selectedCategories, data]);
+  }, [actualSelectedItems, data]);
 
   // Helper: Recursively set selection for a node and its children
   const setNodeSelection = (
-    node: CategoryNode,
+    node: TreeNodeType,
     isSelected: boolean,
     map: SelectionMap = { ...selection }
   ): SelectionMap => {
     map[getNodeKey(node)] = isSelected;
-    if (Array.isArray(node.categories)) {
-      node.categories.forEach((child) => setNodeSelection(child, isSelected, map));
+    const children = getNodeChildren(node);
+    if (Array.isArray(children)) {
+      children.forEach((child) => setNodeSelection(child, isSelected, map));
     }
     return map;
   };
 
   // Helper: Recursively check if all children are selected
-  const isCategoryAndAllSelected = (node: CategoryNode): boolean => {
-    if (!Array.isArray(node.categories) || node.categories.length === 0) {
+  const isCategoryAndAllSelected = (node: TreeNodeType): boolean => {
+    const children = getNodeChildren(node);
+    if (!Array.isArray(children) || children.length === 0) {
       return !!selection[getNodeKey(node)];
     }
     return (
       !!selection[getNodeKey(node)] &&
-      node.categories.every((child) => isCategoryAndAllSelected(child))
+      children.every((child) => isCategoryAndAllSelected(child))
     );
   };
 
+  // Generic alias for backward compatibility
+  const isItemAndAllSelected = isCategoryAndAllSelected;
+
   // Helper: Recursively check if all lowest-level children are selected
-  const isLowestCategorySelected = (node: CategoryNode): boolean => {
-    if (!Array.isArray(node.categories) || node.categories.length === 0) {
+  const isLowestCategorySelected = (node: TreeNodeType): boolean => {
+    const children = getNodeChildren(node);
+    if (!Array.isArray(children) || children.length === 0) {
       return !!selection[getNodeKey(node)];
     }
-    return node.categories.every((child) => isLowestCategorySelected(child));
+    return children.every((child) => isLowestCategorySelected(child));
   };
 
+  // Generic alias for backward compatibility
+  const isLowestItemSelected = isLowestCategorySelected;
+
   // Toggle selection for a single node
-  const toggleSelection = (node: CategoryNode) => {
+  const toggleSelection = (node: TreeNodeType) => {
     setSelection((prev) => {
       const newMap = { ...prev };
       const nodeKey = getNodeKey(node);
       const newState = !prev[nodeKey];
       newMap[nodeKey] = newState;
       
+      const nodeName = getNodeName(node);
       console.log('[TreeList] Toggle selection:', {
-        node: node.productName,
+        node: nodeName,
         newState,
-        setSelectedCategories: !!setSelectedCategories
+        actualSetSelectedItems: !!actualSetSelectedItems
       });
       
-      // Update parent state if setSelectedCategories is available
-      if (setSelectedCategories) {
-        setSelectedCategories((prevCats: string[]) => {
-          let newCats;
+      // Update parent state if actualSetSelectedItems is available
+      if (actualSetSelectedItems) {
+        actualSetSelectedItems((prevItems: string[]) => {
+          let newItems;
           if (newState) {
-            // Add category if not already present
-            if (!prevCats.includes(node.productName)) {
-              newCats = [...prevCats, node.productName];
+            // Add item if not already present
+            if (!prevItems.includes(nodeName)) {
+              newItems = [...prevItems, nodeName];
             } else {
-              newCats = prevCats;
+              newItems = prevItems;
             }
           } else {
-            // Remove category
-            newCats = prevCats.filter(cat => cat !== node.productName);
+            // Remove item
+            newItems = prevItems.filter(item => item !== nodeName);
           }
           
-          console.log('[TreeList] Updated selectedCategories:', {
-            before: prevCats,
-            after: newCats,
+          console.log('[TreeList] Updated selectedItems:', {
+            before: prevItems,
+            after: newItems,
             action: newState ? 'added' : 'removed',
-            category: node.productName
+            item: nodeName
           });
           
-          return newCats;
+          return newItems;
         });
       }
       
@@ -261,24 +362,26 @@ const TreeList = ({
     });
     setSelection(newMap);
     
-    // Update parent state if setSelectedCategories is available
-    if (setSelectedCategories) {
+    // Update parent state if actualSetSelectedItems is available
+    if (actualSetSelectedItems) {
       if (newState) {
-        // Select all - collect all category names
-        const allCategoryNames: string[] = [];
-        const collectNames = (nodes: CategoryNode[]) => {
+        // Select all - collect all item names
+        const allItemNames: string[] = [];
+        const collectNames = (nodes: TreeNodeType[]) => {
           nodes.forEach((node) => {
-            allCategoryNames.push(node.productName);
-            if (Array.isArray(node.categories)) {
-              collectNames(node.categories);
+            const nodeName = getNodeName(node);
+            allItemNames.push(nodeName);
+            const children = getNodeChildren(node);
+            if (Array.isArray(children)) {
+              collectNames(children);
             }
           });
         };
         collectNames(data);
-        setSelectedCategories(allCategoryNames);
+        actualSetSelectedItems(allItemNames);
       } else {
         // Clear all
-        setSelectedCategories([]);
+        actualSetSelectedItems([]);
       }
       
       console.log('[TreeList] Select All toggled:', {
@@ -289,63 +392,70 @@ const TreeList = ({
   };
 
   // Toggle lowest-level selection for a node
-  const toggleLowestCategorySelection = (node: CategoryNode) => {
-    if (!Array.isArray(node.categories) || node.categories.length === 0) {
+  const toggleLowestCategorySelection = (node: TreeNodeType) => {
+    const children = getNodeChildren(node);
+    if (!Array.isArray(children) || children.length === 0) {
       toggleSelection(node);
     } else {
       // Toggle all lowest-level children
       const newState = !isLowestCategorySelected(node);
       let newMap = { ...selection };
-      const lowestNodes: CategoryNode[] = [];
+      const lowestNodes: TreeNodeType[] = [];
       
-      const selectLowest = (n: CategoryNode) => {
-        if (!Array.isArray(n.categories) || n.categories.length === 0) {
+      const selectLowest = (n: TreeNodeType) => {
+        const nodeChildren = getNodeChildren(n);
+        if (!Array.isArray(nodeChildren) || nodeChildren.length === 0) {
           newMap[getNodeKey(n)] = newState;
           lowestNodes.push(n);
         } else {
-          n.categories.forEach(selectLowest);
+          nodeChildren.forEach(selectLowest);
         }
       };
       selectLowest(node);
       setSelection(newMap);
       
-      // Update parent state if setSelectedCategories is available
-      if (setSelectedCategories) {
-        setSelectedCategories((prevCats: string[]) => {
-          let newCats = [...prevCats];
+      // Update parent state if actualSetSelectedItems is available
+      if (actualSetSelectedItems) {
+        actualSetSelectedItems((prevItems: string[]) => {
+          let newItems = [...prevItems];
           lowestNodes.forEach((lowestNode) => {
+            const nodeName = getNodeName(lowestNode);
             if (newState) {
-              // Add category if not already present
-              if (!newCats.includes(lowestNode.productName)) {
-                newCats.push(lowestNode.productName);
+              // Add item if not already present
+              if (!newItems.includes(nodeName)) {
+                newItems.push(nodeName);
               }
             } else {
-              // Remove category
-              newCats = newCats.filter(cat => cat !== lowestNode.productName);
+              // Remove item
+              newItems = newItems.filter(item => item !== nodeName);
             }
           });
           
-          console.log('[TreeList] Lowest categories updated:', {
+          console.log('[TreeList] Lowest items updated:', {
             action: newState ? 'selected' : 'unselected',
-            categories: lowestNodes.map(n => n.productName)
+            items: lowestNodes.map(n => getNodeName(n))
           });
           
-          return newCats;
+          return newItems;
         });
       }
     }
   };
 
+  // Generic alias for backward compatibility
+  const toggleLowestItemSelection = toggleLowestCategorySelection;
+
   // Toggle selection for a node and all its subcategories
-  const toggleAllCategorySelection = (node: CategoryNode) => {
+  const toggleAllCategorySelection = (node: TreeNodeType) => {
     const newState = !isCategoryAndAllSelected(node);
     let newMap = { ...selection };
-    const allNodes: CategoryNode[] = [];
+    const allNodes: TreeNodeType[] = [];
     
-    const collectAllNodes = (n: CategoryNode) => {
+    const collectAllNodes = (n: TreeNodeType) => {
       allNodes.push(n);
-      if (Array.isArray(n.categories)) {
-        n.categories.forEach(collectAllNodes);
+      const children = getNodeChildren(n);
+      if (Array.isArray(children)) {
+        children.forEach(collectAllNodes);
       }
     };
     
@@ -353,34 +463,38 @@ const TreeList = ({
     setNodeSelection(node, newState, newMap);
     setSelection({ ...newMap });
     
-    // Update parent state if setSelectedCategories is available
-    if (setSelectedCategories) {
-      setSelectedCategories((prevCats: string[]) => {
-        let newCats = [...prevCats];
+    // Update parent state if actualSetSelectedItems is available
+    if (actualSetSelectedItems) {
+      actualSetSelectedItems((prevItems: string[]) => {
+        let newItems = [...prevItems];
         allNodes.forEach((selectedNode) => {
+          const nodeName = getNodeName(selectedNode);
           if (newState) {
-            // Add category if not already present
-            if (!newCats.includes(selectedNode.productName)) {
-              newCats.push(selectedNode.productName);
+            // Add item if not already present
+            if (!newItems.includes(nodeName)) {
+              newItems.push(nodeName);
             }
           } else {
-            // Remove category
-            newCats = newCats.filter(cat => cat !== selectedNode.productName);
+            // Remove item
+            newItems = newItems.filter(item => item !== nodeName);
           }
         });
         
-        console.log('[TreeList] All subcategories updated:', {
+        console.log('[TreeList] All sub-items updated:', {
           action: newState ? 'selected' : 'unselected',
-          categories: allNodes.map(n => n.productName)
+          items: allNodes.map(n => getNodeName(n))
         });
         
-        return newCats;
+        return newItems;
       });
     }
   };
 
+  // Generic alias for backward compatibility
+  const toggleAllItemSelection = toggleAllCategorySelection;
+
   // Toggle expand/collapse
-  const toggleExpand = (node: CategoryNode) => {
+  const toggleExpand = (node: TreeNodeType) => {
     setExpanded((prev) => ({
       ...prev,
       [getNodeKey(node)]: !prev[getNodeKey(node)],
@@ -415,17 +529,20 @@ const TreeList = ({
 
   // Render tree recursively
   const renderTree = (
-    nodes: CategoryNode[],
-    parent: CategoryNode | null = null,
+    nodes: TreeNodeType[],
+    parent: TreeNodeType | null = null,
     level = 0
   ) => (
     <ul className="tree-list-ul" style={{ listStyle: 'none', paddingLeft: level === 0 ? 0 : 20 }}>
       {nodes.map((node) => {
-        const hasChildren = Array.isArray(node.categories) && node.categories.length > 0;
+        const children = getNodeChildren(node);
+        const hasChildren = Array.isArray(children) && children.length > 0;
         const nodeKey = getNodeKey(node);
+        const nodeName = getNodeName(node);
         const isExpanded = expanded[nodeKey];
         const isNodeDirectMatch = isDirectMatch(node);
         const nodeHasMatchingChildren = hasMatchingChildren(node);
+        const canSelectSubItems = getCanSelectSubItems(node);
         
         return (
           <li key={nodeKey}>
@@ -449,7 +566,7 @@ const TreeList = ({
 
               {/* Node Name with highlighting */}
               <span className="tree-node-label">
-                {isSearching ? highlightSearchTerm(node.productName, searchQuery) : node.productName}
+                {isSearching ? highlightSearchTerm(nodeName, searchQuery) : nodeName}
                 {isSearching && nodeHasMatchingChildren && !isNodeDirectMatch && (
                   <span className="match-indicator"> (contains matches)</span>
                 )}
@@ -457,23 +574,23 @@ const TreeList = ({
 
               {/* Action buttons container */}
               <div className="action-buttons">
-                {/* Select only lowest level categories */}
+                {/* Select only lowest level items */}
                 {parent !== null && hasChildren && (
                   <button 
                     className="icon-btn lowest-btn" 
                     onClick={() => toggleLowestCategorySelection(node)}
-                    title={isLowestCategorySelected(node) ? 'Unselect Lowest Categories' : 'Select Lowest Categories'}
+                    title={isLowestCategorySelected(node) ? `Unselect Lowest ${nodeType === 'category' ? 'Categories' : 'Geographies'}` : `Select Lowest ${nodeType === 'category' ? 'Categories' : 'Geographies'}`}
                   >
                     ↓
                   </button>
                 )}
 
-                {/* Select category and all subcategories */}
-                {node.canSelectsubcategories && (
+                {/* Select item and all sub-items */}
+                {canSelectSubItems && (
                   <button 
                     className="icon-btn all-btn" 
                     onClick={() => toggleAllCategorySelection(node)}
-                    title={isCategoryAndAllSelected(node) ? 'Unselect All Subcategories' : 'Select All Subcategories'}
+                    title={isCategoryAndAllSelected(node) ? `Unselect All Sub${nodeType === 'category' ? 'categories' : 'geographies'}` : `Select All Sub${nodeType === 'category' ? 'categories' : 'geographies'}`}
                   >
                     ⊞
                   </button>
@@ -482,7 +599,7 @@ const TreeList = ({
             </div>
 
             {/* Children */}
-            {hasChildren && isExpanded && renderTree(node.categories, node, level + 1)}
+            {hasChildren && isExpanded && renderTree(children, node, level + 1)}
           </li>
         );
       })}
