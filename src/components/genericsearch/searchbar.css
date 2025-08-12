@@ -1,0 +1,121 @@
+/* Generic SearchBar Component Styles */
+
+.generic-search-container {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 80%;
+}
+
+.generic-search-input {
+  width: 100%;
+  padding: 12px 45px 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #fff;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.generic-search-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.generic-search-input::placeholder {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.search-icon {
+  position: absolute;
+  right: 35px;
+  color: #6c757d;
+  pointer-events: none;
+  font-size: 14px;
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6c757d;
+  font-size: 16px;
+  padding: 2px;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.search-clear-btn:hover {
+  background-color: #f8f9fa;
+  color: #dc3545;
+}
+
+.search-hint {
+  font-size: 12px;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 4px;
+  padding-left: 4px;
+}
+
+/* Category-specific styles for backward compatibility */
+.category-search-container {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.category-search-container .search-input-wrapper {
+  width: 80%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .search-input-wrapper {
+    width: 100%;
+  }
+  
+  .category-search-container .search-input-wrapper {
+    width: 100%;
+  }
+  
+  .generic-search-input {
+    padding: 10px 40px 10px 14px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .generic-search-input {
+    padding: 8px 35px 8px 12px;
+    font-size: 12px;
+  }
+  
+  .search-icon {
+    right: 30px;
+    font-size: 12px;
+  }
+  
+  .search-clear-btn {
+    right: 10px;
+    width: 18px;
+    height: 18px;
+    font-size: 14px;
+  }
+}

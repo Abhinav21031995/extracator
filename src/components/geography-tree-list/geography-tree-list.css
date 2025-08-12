@@ -1,0 +1,245 @@
+/* GeographyTreeList component styles */
+.tree-list {
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.tree-list-ul {
+  margin: 0;
+  padding: 0;
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.tree-node:hover {
+  background-color: rgba(0, 120, 215, 0.1);
+}
+
+.tree-node.search-mode {
+  padding: 6px 8px;
+  margin: 2px 0;
+}
+
+.tree-node.direct-match {
+  background-color: rgba(0, 120, 215, 0.15);
+  border-left: 3px solid #0078d4;
+  padding-left: 13px;
+}
+
+.tree-node.has-matching-children {
+  background-color: rgba(255, 193, 7, 0.1);
+  border-left: 3px solid #ffc107;
+  padding-left: 13px;
+}
+
+.toggle-btn {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toggle-btn:hover {
+  background-color: #e6e6e6;
+  border-color: #999;
+}
+
+.toggle-icon {
+  line-height: 1;
+}
+
+.tree-node-checkbox {
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tree-node-label {
+  flex: 1;
+  user-select: none;
+  min-width: 0;
+  word-wrap: break-word;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tree-node:hover .action-buttons {
+  opacity: 1;
+}
+
+.icon-btn {
+  background: #0078d4;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.icon-btn:hover {
+  background: #106ebe;
+  transform: scale(1.1);
+}
+
+.lowest-btn {
+  background: #28a745;
+}
+
+.lowest-btn:hover {
+  background: #218838;
+}
+
+.all-btn {
+  background: #6f42c1;
+}
+
+.all-btn:hover {
+  background: #5a2d91;
+}
+
+.Page-header {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 16px 0;
+  color: #323130;
+  border-bottom: 2px solid #0078d4;
+  padding-bottom: 8px;
+}
+
+.tree-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.tree-header-container .Page-header {
+  margin: 0;
+  border-bottom: 2px solid #0078d4;
+  padding-bottom: 8px;
+}
+
+.select-all-header {
+  display: flex;
+  align-items: center;
+}
+
+.select-all-container {
+  margin-bottom: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.select-all {
+  cursor: pointer;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  display: inline-block;
+}
+
+.select-all:hover {
+  background-color: #0056b3;
+}
+
+.search-info {
+  background-color: #e8f4fd;
+  border: 1px solid #bee5eb;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.search-results-text {
+  font-weight: 500;
+  color: #0c5460;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.search-help-text {
+  color: #6c757d;
+  font-size: 11px;
+}
+
+.search-highlight {
+  background-color: #ffeb3b;
+  color: #333;
+  font-weight: bold;
+  padding: 1px 2px;
+  border-radius: 2px;
+}
+
+.match-indicator {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .tree-list {
+    padding: 12px;
+    font-size: 13px;
+  }
+  
+  .Page-header {
+    font-size: 16px;
+  }
+  
+  .action-buttons {
+    opacity: 1;
+  }
+  
+  .icon-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+}
