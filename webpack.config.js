@@ -3,9 +3,6 @@ const { ModuleFederationPlugin } = require("webpack").container;
 const path = require("path");
 const deps = require("./package.json").dependencies;
 
-// Log React version during build
-console.log('Building with React version:', deps.react);
-
 module.exports = {
   entry: ["./src/init.ts", "./src/bootstrap.tsx"],
   mode: "development",
@@ -60,13 +57,13 @@ module.exports = {
         "react": {
           singleton: true,
           requiredVersion: ">=18.2.0",
-          eager: false,
+          eager: process.env.NODE_ENV === 'development',
           strictVersion: false
         },
         "react-dom": {
           singleton: true,
           requiredVersion: ">=18.2.0", 
-          eager: false,
+          eager: process.env.NODE_ENV === 'development',
           strictVersion: false
         }
       }

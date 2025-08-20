@@ -20,8 +20,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "webpack serve",
-    "build": "webpack",
+    "start": "cross-env NODE_ENV=development webpack serve",
+    "start:remote": "cross-env NODE_ENV=production webpack serve",
+    "build": "cross-env NODE_ENV=production webpack",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -48,6 +49,7 @@
     "@babel/preset-react": "^7.27.1",
     "@babel/preset-typescript": "^7.27.1",
     "babel-loader": "^10.0.0",
+    "cross-env": "^7.0.3",
     "css-loader": "^7.1.2",
     "html-webpack-plugin": "^5.6.4",
     "style-loader": "^4.0.0",

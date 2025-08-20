@@ -46,14 +46,16 @@ function SearchBarComponent<T extends SearchableItem>({
     const isSearching = query.length >= minSearchLength;
 
     if (query.length < minSearchLength) {
-      onFilteredDataChange([...data]);
-      onSearchStateChange?.(false, '');
+      if (isSearching) {
+        onFilteredDataChange(data);
+        onSearchStateChange?.(false, '');
+      }
     } else {
       const filteredResults = filterItems(data, query);
       onFilteredDataChange(filteredResults);
       onSearchStateChange?.(true, query);
     }
-  }, [debouncedQuery, data, minSearchLength, onFilteredDataChange, onSearchStateChange]);
+  }, [debouncedQuery, minSearchLength]); // Remove data from dependencies to prevent infinite loop
 
   // Get the searchable text from an item
   const getSearchableText = (item: T): string => {

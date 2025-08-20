@@ -10,7 +10,6 @@ const App = () => {
   const loggedRef = React.useRef(false);
   React.useEffect(() => {
     if (!loggedRef.current) {
-      console.log('[Extractor MF] React version:', React.version);
       loggedRef.current = true;
     }
   }, []);

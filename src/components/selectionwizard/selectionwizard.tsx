@@ -33,7 +33,6 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
   onNextStep,
   onPreviousStep
 }) => {
-  console.log('[SelectionWizard] selectedCategories:', selectedCategories);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -72,79 +71,42 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
 
   // Remove category and notify parent component
   const handleRemoveCategory = (categoryToRemove: string) => {
-    console.log('[SelectionWizard] Remove initiated:', {
-      category: categoryToRemove,
-      currentSelections: selectedCategories
-    });
     
     if (setSelectedCategories) {
       // Step 1: Update selectedCategories state
       setSelectedCategories((prevCategories: string[]) => {
-        console.log('[SelectionWizard] Updating selections:', {
-          removing: categoryToRemove,
-          before: prevCategories
-        });
         
         const newCategories = prevCategories.filter((cat: string) => cat !== categoryToRemove);
-        
-        console.log('[SelectionWizard] Selection updated:', {
-          after: newCategories,
-          removed: categoryToRemove
-        });
         
         return newCategories;
       });
       
       // Step 2: Notify TreeList to update visual state and node property
-      console.log('[SelectionWizard] Preparing tree update event:', {
-        category: categoryToRemove,
-        newState: false
-      });
       
       const event = new CustomEvent('categorySelectionChanged', {
         detail: {
           categoryName: categoryToRemove,
           selected: false,
-          updateNode: true // Ensure node's selected property is updated
+          updateNode: true
         }
       });
       
-      console.log('[SelectionWizard] Dispatching tree update event');
       window.dispatchEvent(event);
-      console.log('[SelectionWizard] Tree update event dispatched');
-    } else {
-      console.error('[SelectionWizard] Error: setSelectedCategories is undefined', {
-        category: categoryToRemove,
-        currentSelections: selectedCategories
-      });
-    }
+    } 
   };
 
   // Remove geography function (similar to category removal)
   const handleRemoveGeography = (geographyToRemove: string) => {
-    console.log('[SelectionWizard] Removing geography:', {
-      geography: geographyToRemove,
-      currentSelections: selectedGeographies
-    });
     
     if (setSelectedGeographies) {
       // Step 1: Update the state
       setSelectedGeographies(prevGeographies => {
         const newGeographies = prevGeographies.filter(geo => geo !== geographyToRemove);
-        console.log('[SelectionWizard] Updated geography selections:', {
-          previous: prevGeographies,
-          new: newGeographies,
-          removed: geographyToRemove
-        });
         
         return newGeographies;
       });
       
       // Step 2: Notify Geography component to update visual state and node property
-      console.log('[SelectionWizard] Preparing geography tree update event:', {
-        geography: geographyToRemove,
-        newState: false
-      });
       
       const event = new CustomEvent('geographySelectionChanged', {
         detail: {
@@ -154,15 +116,8 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
         }
       });
       
-      console.log('[SelectionWizard] Dispatching geography tree update event');
       window.dispatchEvent(event);
-      console.log('[SelectionWizard] Geography tree update event dispatched');
-    } else {
-      console.error('[SelectionWizard] Error: setSelectedGeographies is undefined', {
-        geography: geographyToRemove,
-        currentSelections: selectedGeographies
-      });
-    }
+    } 
   };
 
   // Function to check if selections have been made
@@ -177,10 +132,6 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
 
   // Clear all selections
   const handleClearAll = () => {
-    console.log('[SelectionWizard] Clear all initiated:', {
-      currentSelections: selectedCategories,
-      currentGeographies: selectedGeographies
-    });
     
     // Clear categories if on category step or if categories exist
     if (setSelectedCategories && selectedCategories.length > 0) {
@@ -202,7 +153,6 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
       window.dispatchEvent(geographyEvent);
     }
     
-    console.log('[SelectionWizard] Clear all events dispatched');
   };
 
 
@@ -378,15 +328,15 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
             </button>
           )}
           
-          {currentStep === 'geography' && (
+            {currentStep === 'geography' && (
             <button 
               className="wizard-btn wizard-btn-success" 
-              onClick={() => console.log('Wizard completed!', { selectedCategories, selectedGeographies })}
+              onClick={() => {/* Wizard completed action here */}}
               disabled={selectedGeographies.length === 0}
             >
               Complete
             </button>
-          )}
+            )}
         </div>
       </div>
     </div>

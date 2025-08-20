@@ -152,7 +152,6 @@ const TreeList = ({
     const itemNameKey = nodeType === 'category' ? 'categoryName' : 'geographyName';
     
     const handleSelectionChange = (event: CustomEvent<any>) => {
-      console.log('[TreeList] Received itemSelectionChanged event:', event.detail);
       
       // Support both old and new event detail formats
       const itemName = event.detail.itemName || event.detail[itemNameKey];
@@ -177,19 +176,16 @@ const TreeList = ({
       const targetNode = findNodeByName(data, itemName);
       if (targetNode) {
         const nodeKey = getNodeKey(targetNode);
-        console.log('[TreeList] Updating node selection:', { nodeKey, selected });
         
         setSelection(prev => {
           const newSelection = { ...prev };
           newSelection[nodeKey] = selected;
-          console.log('[TreeList] Selection updated:', newSelection);
           return newSelection;
         });
       }
     };
 
     const handleClearAll = () => {
-      console.log('[TreeList] Received itemClearAll event');
       // Clear all node selections and update state
       setSelection({});
       setIsAllSelected(false);
@@ -216,7 +212,6 @@ const TreeList = ({
 
   // Synchronize internal selection state with external selected items prop
   useEffect(() => {
-    console.log('[TreeList] Synchronizing with selected items:', actualSelectedItems);
     
     if (data) {
       const newSelection: SelectionMap = {};
@@ -242,7 +237,6 @@ const TreeList = ({
       
       markSelectedNodes(data);
       
-      console.log('[TreeList] New selection state:', newSelection);
       setSelection(newSelection);
       
       // Update "Select All" state - collect all item names and check if all are selected
@@ -315,11 +309,6 @@ const TreeList = ({
       newMap[nodeKey] = newState;
       
       const nodeName = getNodeName(node);
-      console.log('[TreeList] Toggle selection:', {
-        node: nodeName,
-        newState,
-        actualSetSelectedItems: !!actualSetSelectedItems
-      });
       
       // Update parent state if actualSetSelectedItems is available
       if (actualSetSelectedItems) {
@@ -336,13 +325,6 @@ const TreeList = ({
             // Remove item
             newItems = prevItems.filter(item => item !== nodeName);
           }
-          
-          console.log('[TreeList] Updated selectedItems:', {
-            before: prevItems,
-            after: newItems,
-            action: newState ? 'added' : 'removed',
-            item: nodeName
-          });
           
           return newItems;
         });
@@ -384,10 +366,6 @@ const TreeList = ({
         actualSetSelectedItems([]);
       }
       
-      console.log('[TreeList] Select All toggled:', {
-        newState,
-        action: newState ? 'selected all' : 'cleared all'
-      });
     }
   };
 
@@ -429,11 +407,6 @@ const TreeList = ({
               // Remove item
               newItems = newItems.filter(item => item !== nodeName);
             }
-          });
-          
-          console.log('[TreeList] Lowest items updated:', {
-            action: newState ? 'selected' : 'unselected',
-            items: lowestNodes.map(n => getNodeName(n))
           });
           
           return newItems;
@@ -478,11 +451,6 @@ const TreeList = ({
             // Remove item
             newItems = newItems.filter(item => item !== nodeName);
           }
-        });
-        
-        console.log('[TreeList] All sub-items updated:', {
-          action: newState ? 'selected' : 'unselected',
-          items: allNodes.map(n => getNodeName(n))
         });
         
         return newItems;
