@@ -6,18 +6,18 @@ import Geography from './components/geography/geography';
 import SelectionWizard from './components/selectionwizard/selectionwizard';
 
 const App = () => {
+  // Log React version only once on mount, using a ref to ensure it only logs once
+  const loggedRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!loggedRef.current) {
+      console.log('[Extractor MF] React version:', React.version);
+      loggedRef.current = true;
+    }
+  }, []);
+
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedGeographies, setSelectedGeographies] = useState<string[]>([]);
   const [currentStep, setCurrentStep] = useState<'category' | 'geography'>('category');
-
-  // Log whenever selections change
-  React.useEffect(() => {
-    console.log('[App] selectedCategories:', selectedCategories);
-  }, [selectedCategories]);
-
-  React.useEffect(() => {
-    console.log('[App] selectedGeographies:', selectedGeographies);
-  }, [selectedGeographies]);
 
   const handleNextStep = () => {
     if (currentStep === 'category') {

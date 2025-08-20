@@ -3,12 +3,11 @@ const { ModuleFederationPlugin } = require("webpack").container;
 const path = require("path");
 const deps = require("./package.json").dependencies;
 
+// Log React version during build
+console.log('Building with React version:', deps.react);
+
 module.exports = {
-  entry: {
-    app: {
-      import: "./src/index.tsx",
-    },
-  },
+  entry: ["./src/init.ts", "./src/bootstrap.tsx"],
   mode: "development",
   devServer: {
     static: {
@@ -58,27 +57,17 @@ module.exports = {
         "./App": "./src/App",
       },
       shared: {
-        react: { 
+        "react": {
           singleton: true,
-          requiredVersion: deps.react,
-          eager: true,
-          // strictVersion: false
+          requiredVersion: ">=18.2.0",
+          eager: false,
+          strictVersion: false
         },
-        "react-dom": { 
+        "react-dom": {
           singleton: true,
-          requiredVersion: deps.react,
-          eager: true,
-          // strictVersion: false
-        },
-        "react/jsx-runtime": {
-          singleton: true,
-          eager: true,
-          requiredVersion: false
-        },
-        "react/jsx-dev-runtime": {
-          singleton: true,
-          eager: true,
-          requiredVersion: false
+          requiredVersion: ">=18.2.0", 
+          eager: false,
+          strictVersion: false
         }
       }
     }),
@@ -87,8 +76,8 @@ module.exports = {
     }),
   ],
   output: {
-    filename: "[name].js",
-    path: path.resolve(__dirname, "dist"),
-    publicPath: "http://localhost:3001/",
-  },
+      filename: "[name].js",
+      path: path.resolve(__dirname, "dist"),
+      publicPath: "auto",
+    },
 }

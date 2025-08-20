@@ -56,6 +56,6 @@ const Category= (props: CategoryProps) => {
       />
     </div>
   );
-};
+}
 
 export default Category;

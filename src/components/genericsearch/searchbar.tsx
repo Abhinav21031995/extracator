@@ -17,7 +17,7 @@ export interface SearchBarProps<T extends SearchableItem> {
   debounceMs?: number;
 }
 
-function SearchBar<T extends SearchableItem>({
+function SearchBarComponent<T extends SearchableItem>({
   data,
   onFilteredDataChange,
   onSearchStateChange,
@@ -143,4 +143,5 @@ function SearchBar<T extends SearchableItem>({
   );
 }
 
+const SearchBar = React.memo(SearchBarComponent) as typeof SearchBarComponent;
 export default SearchBar;
