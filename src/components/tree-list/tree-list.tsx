@@ -26,8 +26,11 @@ export interface TreeListProps {
   searchQuery?: string;
   initiallyExpanded?: boolean;
   nodeType?: 'category' | 'geography';
+  shouldReset?: boolean;
+  onResetComplete?: () => void;
 }
 
+// Interface for managing selection and expansion state
 interface SelectionMap {
   [key: string]: boolean;
 }
@@ -87,7 +90,9 @@ const TreeList = ({
   isSearching = false,
   searchQuery = '',
   initiallyExpanded = true, // Default to true for backward compatibility
-  nodeType = 'category'
+  nodeType = 'category',
+  shouldReset = false,
+  onResetComplete
 }: TreeListProps) => {
   // Smart prop selection: prefer generic props, fallback to specific props
   const actualSelectedItems = selectedItems && selectedItems.length > 0 
@@ -101,24 +106,27 @@ const TreeList = ({
   const [expanded, setExpanded] = useState<SelectionMap>({});
   const [isAllSelected, setIsAllSelected] = useState(false);
 
-  // Initialize expansion state - only run once when data changes
+  // Handle both initial setup and reset
   useEffect(() => {
-    if (data) {
+    if (data && (shouldReset || !Object.keys(expanded).length)) {
       setExpanded((prevExpanded) => {
-        const newExpanded: SelectionMap = { ...prevExpanded };
+        const newExpanded: SelectionMap = {};
         
-        // Only expand root nodes by default if they haven't been set before
+        // Only expand root nodes based on initiallyExpanded setting
         data.forEach((node) => {
           const nodeKey = getNodeKey(node);
-          if (!(nodeKey in newExpanded)) {
-            newExpanded[nodeKey] = initiallyExpanded; // Use the prop to control initial expansion
-          }
+          newExpanded[nodeKey] = initiallyExpanded;
         });
         
         return newExpanded;
       });
+
+      // If this was triggered by a reset, notify parent
+      if (shouldReset) {
+        onResetComplete?.();
+      }
     }
-  }, [data, initiallyExpanded]);
+  }, [data, shouldReset, initiallyExpanded, expanded, onResetComplete]);
 
   // Handle search mode expansion - expand nodes that have matching children
   useEffect(() => {
@@ -191,22 +199,13 @@ const TreeList = ({
       setIsAllSelected(false);
     };
 
-    // Listen for both category and geography events
-    const categoryEventName = 'categorySelectionChanged';
-    const geographyEventName = 'geographySelectionChanged';
-    const categoryClearEventName = 'categoryClearAll';
-    const geographyClearEventName = 'geographyClearAll';
-
-    window.addEventListener(categoryEventName, handleSelectionChange as EventListener);
-    window.addEventListener(geographyEventName, handleSelectionChange as EventListener);
-    window.addEventListener(categoryClearEventName, handleClearAll as EventListener);
-    window.addEventListener(geographyClearEventName, handleClearAll as EventListener);
+    // Add event listeners
+    window.addEventListener(eventName, handleSelectionChange as EventListener);
+    window.addEventListener(clearAllEventName, handleClearAll as EventListener);
 
     return () => {
-      window.removeEventListener(categoryEventName, handleSelectionChange as EventListener);
-      window.removeEventListener(geographyEventName, handleSelectionChange as EventListener);
-      window.removeEventListener(categoryClearEventName, handleClearAll as EventListener);
-      window.removeEventListener(geographyClearEventName, handleClearAll as EventListener);
+      window.removeEventListener(eventName, handleSelectionChange as EventListener);
+      window.removeEventListener(clearAllEventName, handleClearAll as EventListener);
     };
   }, [data]);
 
@@ -486,13 +485,13 @@ const TreeList = ({
   };
 
   // Check if a node is a direct match for search
-  const isDirectMatch = (node: any) => {
-    return node._isDirectMatch === true;
+  const isDirectMatch = (node: TreeNodeType) => {
+    return '_isDirectMatch' in node && (node as any)._isDirectMatch === true;
   };
 
   // Check if a node has matching children
-  const hasMatchingChildren = (node: any) => {
-    return node._hasMatchingChildren === true;
+  const hasMatchingChildren = (node: TreeNodeType) => {
+    return '_hasMatchingChildren' in node && (node as any)._hasMatchingChildren === true;
   };
 
   // Render tree recursively

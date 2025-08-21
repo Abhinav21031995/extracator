@@ -18,6 +18,7 @@ const Geography: React.FC<GeographyProps> = ({
   const [filteredData, setFilteredData] = useState<GeographyNode[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [shouldResetTree, setShouldResetTree] = useState(false);
 
   useEffect(() => {
     setDataSource(MockGeographyHierarchyData);
@@ -28,9 +29,13 @@ const Geography: React.FC<GeographyProps> = ({
     setFilteredData(filtered);
   };
 
-  const handleSearchStateChange = (searching: boolean, query: string) => {
+  const handleSearchStateChange = (searching: boolean, query: string, isCleared?: boolean) => {
     setIsSearching(searching);
     setSearchQuery(query);
+    if (isCleared) {
+      setShouldResetTree(true);
+      setFilteredData(dataSource);
+    }
   };
 
   return (
@@ -55,6 +60,8 @@ const Geography: React.FC<GeographyProps> = ({
         searchQuery={searchQuery}
         initiallyExpanded={false}
         nodeType="geography"
+        shouldReset={shouldResetTree}
+        onResetComplete={() => setShouldResetTree(false)}
       />
     </div>
   );

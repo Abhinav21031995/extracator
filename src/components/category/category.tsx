@@ -27,9 +27,15 @@ const Category= (props: CategoryProps) => {
     setFilteredData(filtered);
   };
 
-  const handleSearchStateChange = (searching: boolean, query: string) => {
+  const [shouldResetTree, setShouldResetTree] = useState(false);
+
+  const handleSearchStateChange = (searching: boolean, query: string, isCleared?: boolean) => {
     setIsSearching(searching);
     setSearchQuery(query);
+    if (isCleared) {
+      setShouldResetTree(true);
+      setFilteredData(dataSource);
+    }
   };
 
   return (
@@ -48,6 +54,8 @@ const Category= (props: CategoryProps) => {
         data={filteredData}
         heading={heading}
         showSelectAllButton={showSelectAllButton}
+        shouldReset={shouldResetTree}
+        onResetComplete={() => setShouldResetTree(false)}
         selectedCategories={selectedCategories}
         setSelectedCategories={setSelectedCategories}
         isSearching={isSearching}

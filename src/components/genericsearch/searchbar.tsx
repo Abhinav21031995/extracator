@@ -8,7 +8,7 @@ export interface SearchableItem {
 export interface SearchBarProps<T extends SearchableItem> {
   data: T[];
   onFilteredDataChange: (filteredData: T[]) => void;
-  onSearchStateChange?: (isSearching: boolean, query: string) => void;
+  onSearchStateChange?: (isSearching: boolean, query: string, isCleared?: boolean) => void;
   placeholder?: string;
   searchField: keyof T | ((item: T) => string);
   childrenField?: keyof T;
@@ -109,7 +109,7 @@ function SearchBarComponent<T extends SearchableItem>({
   const clearSearch = () => {
     setSearchQuery('');
     setDebouncedQuery('');
-    onSearchStateChange?.(false, '');
+    onSearchStateChange?.(false, '', true); // Added true to indicate search was cleared
   };
 
   return (

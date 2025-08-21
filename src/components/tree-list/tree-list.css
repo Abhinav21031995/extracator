@@ -2,7 +2,7 @@
 
 .tree-list {
   font-family: Arial, sans-serif;
-  max-height: 500px;
+  max-height: 700px;
   overflow-y: auto;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -28,20 +28,22 @@
   background-color: #e3f2fd;
   border: 1px solid #bbdefb;
   border-radius: 4px;
-  padding: 10px 15px;
-  margin-bottom: 15px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .search-results-text {
   font-weight: 600;
   color: #1976d2;
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
 }
 
 .search-help-text {
   color: #666;
   font-size: 11px;
+  display: block;
 }
 
 .tree-header-container {
@@ -85,6 +87,11 @@
 .tree-list-ul {
   margin: 0;
   list-style: none;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .tree-node {
@@ -102,33 +109,54 @@
 }
 
 .toggle-btn {
-  background: none;
-  border: none;
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
   cursor: pointer;
-  padding: 4px 8px;
   margin-right: 8px;
-  border-radius: 3px;
+  border-radius: 75%;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
   min-width: 24px;
   min-height: 24px;
+  padding: 0;
+  transition: all 0.2s ease;
+  position: relative;
+  box-sizing: border-box;
 }
 
 .toggle-btn:hover {
-  background-color: #e9ecef;
+  background-color: #bbdefb;
+  transform: scale(1.1);
 }
 
 .toggle-icon {
   font-weight: bold;
-  font-size: 14px;
-  color: #495057;
+  font-size: 20px;
+  color: #007bff;
   user-select: none;
+  line-height: 20px;
+  height: 20px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(0deg);
+  transition: transform 0.2s ease;
+}
+
+.toggle-btn[aria-expanded="true"] .toggle-icon {
+  transform: rotate(45deg);
 }
 
 .tree-node-checkbox {
   margin-right: 8px;
   cursor: pointer;
+  width: 18px;
+  height: 18px;
+  accent-color: #007bff;
 }
 
 .tree-node-label {

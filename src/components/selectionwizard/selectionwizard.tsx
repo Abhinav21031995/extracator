@@ -182,29 +182,24 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
       <div className="filter-controls">
         <div className="filter-controls-content">
           {/* Wizard Navigation */}
-          <div className="wizard-navigation">
-            <div className="wizard-steps">
-              <div className={`wizard-step ${currentStep === 'category' ? 'active' : 'completed'}`}>
-                1. Categories
-              </div>
-              <div className={`wizard-step ${currentStep === 'geography' ? 'active' : ''}`}>
-                2. Geography
+          <div className="wizard-header">
+            <div className="wizard-navigation">
+              <div className="wizard-steps">
+                <div className={`wizard-step ${currentStep === 'category' ? 'active' : 'completed'}`}>
+                  1. Categories
+                </div>
+                <div className={`wizard-step ${currentStep === 'geography' ? 'active' : ''}`}>
+                  2. Geography
+                </div>
               </div>
             </div>
-          </div>
-          <div className="filter-controls-heading">
-            <div className="header-container">
-              <h2 className="section-header">Selections:</h2>
-              {tempSelectionsMade() && (
-                <button 
-                  className="clear-all-btn"
-                  onClick={() => handleClearAll()}
-                  aria-label="Clear all selections"
-                >
-                  Clear All
-                </button>
-              )}
-            </div>
+            <button 
+              className="clear-all-btn"
+              onClick={() => handleClearAll()}
+              aria-label="Clear all selections"
+            >
+              Clear All
+            </button>
           </div>
 
           {/* Container for No selections made message */}
@@ -219,7 +214,6 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
             <div className="selections-container">
               
               {/* Categories Section */}
-              {selectedCategories.length > 0 && (
                 <div className="selection-section">
                   <div 
                     className={`section-header ${currentStep === 'category' ? 'expanded' : 'collapsed'}`}
@@ -230,6 +224,21 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
                         ▼
                       </span>
                       <span className="section-name">Categories ({selectedCategories.length})</span>
+                      <button 
+                        className="section-clear-btn"
+                        onClick={() => {
+                          if (setSelectedCategories) {
+                            setSelectedCategories([]);
+                            const categoryEvent = new CustomEvent('categoryClearAll', {
+                              detail: { clearAll: true }
+                            });
+                            window.dispatchEvent(categoryEvent);
+                          }
+                        }}
+                        aria-label="Clear all categories"
+                      >
+                        Clear
+                      </button>
                     </div>
                   </div>
                   
@@ -258,10 +267,8 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
                     </div>
                   )}
                 </div>
-              )}
 
               {/* Geographies Section */}
-              {selectedGeographies.length > 0 && (
                 <div className="selection-section">
                   <div 
                     className={`section-header ${currentStep === 'geography' ? 'expanded' : 'collapsed'}`}
@@ -272,6 +279,21 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
                         ▼
                       </span>
                       <span className="section-name">Geographies ({selectedGeographies.length})</span>
+                      <button 
+                        className="section-clear-btn"
+                        onClick={() => {
+                          if (setSelectedGeographies) {
+                            setSelectedGeographies([]);
+                            const geographyEvent = new CustomEvent('geographyClearAll', {
+                              detail: { clearAll: true }
+                            });
+                            window.dispatchEvent(geographyEvent);
+                          }
+                        }}
+                        aria-label="Clear all geographies"
+                      >
+                        Clear
+                      </button>
                     </div>
                   </div>
                   
@@ -300,7 +322,7 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
                     </div>
                   )}
                 </div>
-              )}
+              
               
             </div>
           )}
@@ -328,7 +350,7 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
             </button>
           )}
           
-            {currentStep === 'geography' && (
+          {currentStep === 'geography' && (
             <button 
               className="wizard-btn wizard-btn-success" 
               onClick={() => {/* Wizard completed action here */}}
@@ -336,7 +358,7 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
             >
               Complete
             </button>
-            )}
+          )}
         </div>
       </div>
     </div>

@@ -5,29 +5,35 @@
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  height: 100%;
+  height: calc(100vh - 140px); /* Adjusted to account for header and margins */
   display: flex;
   flex-direction: column;
+  margin: 10px;
+  position: relative;
 }
 
 .filter-controls {
-  padding: 20px;
+  padding: 15px 20px;
   display: flex;
   flex-direction: column;
   height: 100%;
-  justify-content: space-between; /* This will push buttons to bottom */
+  gap: 15px;
+  gap: 15px;
 }
 
 .filter-controls-content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  overflow: visible;
 }
 
 .filter-controls-heading {
   margin-bottom: 20px;
   border-bottom: 2px solid #f0f0f0;
   padding-bottom: 15px;
+  position: relative;
 }
 
 .header-container {
@@ -37,6 +43,29 @@
   gap: 15px;
 }
 
+.wizard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 10px;
+  gap: 20px;
+}
+
+.wizard-navigation {
+  flex: 1;
+}
+
+.wizard-steps {
+  display: flex;
+  gap: 20px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  align-items: center;
+}
+
+
 .section-header {
   margin: 0;
   font-size: 1.4em;
@@ -45,37 +74,70 @@
 }
 
 .clear-all-btn {
-  background-color: #dc3545;
+  background-color: #ff8a8a;
   color: white;
   border: none;
   border-radius: 4px;
   padding: 8px 16px;
   font-size: 14px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
   font-weight: 500;
 }
 
 .clear-all-btn:hover {
-  background-color: #c82333;
+  background-color: #ff6b6b;
+  transform: translateY(-1px);
 }
 
 .clear-all-btn:active {
-  background-color: #bd2130;
+  background-color: #ff4d4d;
+  transform: translateY(0);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.section-name {
+  font-size: 1.1em;
+  font-weight: 500;
+  color: #444;
+}
+
+.section-clear-btn {
+  margin-left: auto;
+  padding: 4px 10px;
+  background-color: #e78993;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.section-clear-btn:hover {
+  background-color: #c82333;
 }
 
 .selections-container {
   flex: 1;
-  margin-bottom: 20px;
-  overflow-y: auto;
-  max-height: calc(100vh - 300px); /* Prevent excessive height */
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 60px); /* Account for header and padding */
 }
 
 .selections-container p {
   color: #666;
   font-style: italic;
   text-align: center;
-  margin: 40px 0;
+  margin: 15px 0;
   font-size: 16px;
 }
 
@@ -83,12 +145,13 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow-y: auto;
   padding-right: 5px;
+  height: 100%;
 }
 
+/* Remove scrollbar styles */
 .selection-list::-webkit-scrollbar {
-  width: 6px;
+  display: none;
 }
 
 .selection-list::-webkit-scrollbar-track {
@@ -312,7 +375,7 @@
 
 /* Secondary button (Back) styles */
 .wizard-btn-secondary {
-  background-color: #6c757d;
+  background-color: #b3bbc2;
   color: white;
 }
 
@@ -367,11 +430,47 @@
   
   .wizard-buttons {
     flex-direction: column;
+    margin-top: auto;
+    padding-top: 20px;
   }
   
   .wizard-btn {
     width: 100%;
   }
+}
+
+.wizard-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 320px;
+  padding: 15px 0 0;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 5px;
+}
+
+.wizard-btn {
+  min-width: 120px;
+  padding: 8px 16px;
+}
+
+/* For Category page - hide back button */
+.category-page .wizard-btn.back {
+  display: none;
+}
+
+/* For Geography page - show back button on left */
+.geography-page .wizard-buttons {
+  justify-content: space-between;
+}
+
+.geography-page .wizard-btn.back {
+  margin-right: auto;
+}
+
+/* Keep next/finish buttons always on right */
+.wizard-btn.next,
+.wizard-btn.finish {
+  margin-left: 0;  /* Reset margin since we're using flex-end */
 }
 
 @media (max-width: 480px) {
