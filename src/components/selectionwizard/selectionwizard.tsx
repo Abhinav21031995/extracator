@@ -69,6 +69,17 @@ const SelectionWizard: React.FC<SelectionWizardProps> = ({
     setCurrentIndex(getCurrentIndex());
   }, [location]);
 
+  // Emit selections to next-app
+  useEffect(() => {
+    const event = new CustomEvent('extractorSelections', {
+      detail: {
+        categories: selectedCategories,
+        geographies: selectedGeographies
+      }
+    });
+    window.dispatchEvent(event);
+  }, [selectedCategories, selectedGeographies]);
+
   // Remove category and notify parent component
   const handleRemoveCategory = (categoryToRemove: string) => {
     
